@@ -1,0 +1,24 @@
+# 2023-10-01T14:26:35
+# salopst
+
+
+# cp ~/.config/kanata/kanata.service.template ~/.config/systemd/user/kanata.service
+# systemctl --user enable kanata.service
+# systemctl --user start kanata.service
+# journalctl --user -u kanata.service
+
+[Unit]
+Description=Kanata keyboard remapper
+Documentation=https://github.com/jtroo/kanata
+# After=display-manager.service # Or graphical-session.target
+
+[Service]
+Environment=PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/home/salopst/.cargo/bin
+Environment=DISPLAY=:0
+Environment=HOME=/home/salopst
+Type=simple
+ExecStart=/home/salopst/.cargo/bin/kanata -c /home/salopst/.config/kanata/salopst-kanata.kbd
+Restart=on-failure # Or "on-success" or other options
+
+[Install]
+WantedBy=graphical-session.target # Or multi-user.target if you want it running even without a graphical session

@@ -1,0 +1,104 @@
+#|---
+Author: salopst
+title: Portable Kanata key remapping configuration
+date: 2023-10-01
+lastmod: 2025-05-11
+version: Claude 3.7 Sonnet 0.7
+ref:
+- https://github.com/OneDeadKey/arsenik/tree/main/kanata
+- https://github.com/LGUG2Z/komokana
+--- |#
+
+;; US ANSI REPLACEMENT BOARD FOR THINKPAD TG14G3-- FRU 5N21D68058
+;; 102d (ISO key) as additional left shift
+
+;; If you find yourself accidentally triggering holds when you want taps, you can decrease tap-timeout further (try 100ms). Conversely, if holds feel sluggish, try reducing hold-timeout in 25ms increments.
+
+
+(defcfg
+ ;; linux-dev /dev/input/by-path/platform-i8042-serio-0-event-kbd
+  process-unmapped-keys yes
+)
+
+;; Minimal defsrc with essential keys plus F12 for special handling
+(defsrc
+  esc  f11  f12
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    
+  caps a    s    d    f    g    h    j    k    l    ;    '    \    ret
+  lsft 102d z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lmet lalt spc  ralt rctl
+) 
+
+(deflayer qwerty
+          esc  @fun @col
+          grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+          tab  q   w   e    r    t    y    u    i    o    p    [    ]    
+          @cbs a    s    d    f    g    h    j   k    l    ;    '    \    @ret
+          @lpa lsft z    x    c    v    b    n    m    ,    .    /    @rpa
+          lctl lmet lalt @spc ralt rctl
+          )
+
+(deflayer colemak
+          esc  @fun @qwe
+          grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+          tab  q    w    f    p    g    j    l    u    y    ;    [    ]    
+          @cbs a    r    s    t    d    h    n    e    i    o    '    \    @ret
+          @lpa lsft z    x    c    v    b    k    m    ,    .    /    @rpa
+          lctl lmet lalt @spc ralt rctl
+          )
+
+(deflayer mod
+          esc  @fun f12
+          grv  M-1  M-2  M-3  M-4  M-5  M-6  M-7  M-8  M-9  0    -    =    bspc
+          tab  q    w    e    r    t    y    u    i    o    up   [    ]    
+          @cbs a    s    d    rght g    left down up   rght ;    '    \    @ret
+          @lpa lsft z    x    c    v    left down m    ,    .    /    @rpa
+          lctl lmet lalt @spc ralt rctl
+          )
+
+(deflayer fun
+          esc  f11  @qwe
+          grv  1    2   3    4    5    6    7    8    9    0    -    =    bspc
+          tab  q   w  e    r    t    y    u    i    o    p    [    ]    
+          @cbs a    s   d    f    g    h    j   k    l   ;    '    \    @ret
+          @lpa lsft z   x    c    v    b    n    m    ,    .    /    @rpa
+          lctl lmet lalt @spc ralt rctl
+          )
+
+(defvar
+  tap-timeout   120
+  hold-timeout  190
+  shift-tap-timeout  100    ;; Shorter tap timeout for shifts to prevent unwanted characters
+  shift-hold-timeout 175   ;; Slightly shorter hold timeout for shifts
+  tap-dance-timeout  180   ;; tap-dance is tricky
+  enter-tap-timeout  200   ;; New timeout for Enter to require deliberate press
+
+  gtt $tap-timeout
+  ght $hold-timeout
+  stt $shift-tap-timeout
+  sht $shift-hold-timeout
+  tdt $tap-dance-timeout
+
+  )
+
+(defalias
+  mod (layer-toggle mod)
+  fun (layer-switch fun)
+  col (layer-switch colemak)
+  qwe (layer-switch qwerty)
+  spc (tap-hold-release $ght $ght spc @mod)   ;; Symmetrical timing for spacebar
+  cbs (tap-hold-release $gtt $ght esc lctl)   ;; tap CapsLock == escape | hold Ctrl
+  ret (tap-hold-release $gtt $ght ret rctl)   ;; Use $ett for Enter tap timeout -- longer to prevent sending texts off half-written
+
+  ;;  ret (tap-hold-release 90 90 nop0 (multi ret rctl)) ;; Quick tap = nop, hold = multi ret/rctl
+
+  
+  lpa (tap-hold-press $stt $sht S-9 lsft)     ;; tap LShift == left paren (9)
+  rpa (tap-hold-press $stt $sht S-0 rsft)     ;; tap RShift == right paren (0)
+  ;;  mwu (mwheel-up    50 120)
+  ;;  mwd (mwheel-down  50 120)
+  ;;  mwl (mwheel-left  50 120)
+  ;;  mwr (mwheel-right 50 120)
+  )
+
