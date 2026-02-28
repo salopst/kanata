@@ -1,0 +1,16 @@
+# salopst
+# 2026-02-28
+
+# ~/.config/systemd/user/kanata.service
+
+[Unit]
+Description=Kanata keyboard remapper
+Documentation=https://github.com/jtroo/kanata
+
+[Service]
+ExecStart=%h/.cargo/bin/kanata --cfg %h/.config/kanata/salopst-kanata.kbd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
