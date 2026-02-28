@@ -1,104 +1,89 @@
 #|---
-Author: salopst
-title: Portable Kanata key remapping configuration
+title: Portable Kanata key remapping configuration (v4, deflayermap)
+author: salopst
 date: 2023-10-01
-lastmod: 2025-05-11
-version: Claude 3.7 Sonnet 0.7
-ref:
-- https://github.com/OneDeadKey/arsenik/tree/main/kanata
-- https://github.com/LGUG2Z/komokana
---- |#
+lastmod: 2026-11-16
+---|#
 
-;; US ANSI REPLACEMENT BOARD FOR THINKPAD TG14G3-- FRU 5N21D68058
-;; 102d (ISO key) as additional left shift
-
-;; If you find yourself accidentally triggering holds when you want taps, you can decrease tap-timeout further (try 100ms). Conversely, if holds feel sluggish, try reducing hold-timeout in 25ms increments.
-
+;; US ANSI replacement board for ThinkPad T14 G3 (FRU 5N21D68058)
+;; 102d (ISO key) doubles as an additional left shift.
+;;
+;; Behaviour
+;;   caps  tap = esc, hold = ctrl
+;;   ret   tap = ret, hold = ctrl
+;;   space tap = space, hold = nav layer
+;;   shift tap = ( or ), hold = shift
+;;   F11 / F12 select QWERTY / Colemak (hold space for real F11 / F12)
+;;
+;; Tuning: accidental holds -> lower the tap value; sluggish holds -> lower the
+;; hold value in 25ms steps.
 
 (defcfg
- ;; linux-dev /dev/input/by-path/platform-i8042-serio-0-event-kbd
   process-unmapped-keys yes
+  ;; concurrent-tap-hold yes   ;; try this if overlapping tap-holds misfire
+  ;; log-layer-changes yes     ;; handy while debugging
 )
 
-;; Minimal defsrc with essential keys plus F12 for special handling
-(defsrc
-  esc  f11  f12
-  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
-  tab  q    w    e    r    t    y    u    i    o    p    [    ]    
-  caps a    s    d    f    g    h    j    k    l    ;    '    \    ret
-  lsft 102d z    x    c    v    b    n    m    ,    .    /    rsft
-  lctl lmet lalt spc  ralt rctl
-) 
-
-(deflayer qwerty
-          esc  @fun @col
-          grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
-          tab  q   w   e    r    t    y    u    i    o    p    [    ]    
-          @cbs a    s    d    f    g    h    j   k    l    ;    '    \    @ret
-          @lpa lsft z    x    c    v    b    n    m    ,    .    /    @rpa
-          lctl lmet lalt @spc ralt rctl
-          )
-
-(deflayer colemak
-          esc  @fun @qwe
-          grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
-          tab  q    w    f    p    g    j    l    u    y    ;    [    ]    
-          @cbs a    r    s    t    d    h    n    e    i    o    '    \    @ret
-          @lpa lsft z    x    c    v    b    k    m    ,    .    /    @rpa
-          lctl lmet lalt @spc ralt rctl
-          )
-
-(deflayer mod
-          esc  @fun f12
-          grv  M-1  M-2  M-3  M-4  M-5  M-6  M-7  M-8  M-9  0    -    =    bspc
-          tab  q    w    e    r    t    y    u    i    o    up   [    ]    
-          @cbs a    s    d    rght g    left down up   rght ;    '    \    @ret
-          @lpa lsft z    x    c    v    left down m    ,    .    /    @rpa
-          lctl lmet lalt @spc ralt rctl
-          )
-
-(deflayer fun
-          esc  f11  @qwe
-          grv  1    2   3    4    5    6    7    8    9    0    -    =    bspc
-          tab  q   w  e    r    t    y    u    i    o    p    [    ]    
-          @cbs a    s   d    f    g    h    j   k    l   ;    '    \    @ret
-          @lpa lsft z   x    c    v    b    n    m    ,    .    /    @rpa
-          lctl lmet lalt @spc ralt rctl
-          )
+;; Empty on purpose: layers below use deflayermap, which names keys directly.
+(defsrc)
 
 (defvar
-  tap-timeout   120
-  hold-timeout  190
-  shift-tap-timeout  100    ;; Shorter tap timeout for shifts to prevent unwanted characters
-  shift-hold-timeout 175   ;; Slightly shorter hold timeout for shifts
-  tap-dance-timeout  180   ;; tap-dance is tricky
-  enter-tap-timeout  200   ;; New timeout for Enter to require deliberate press
-
-  gtt $tap-timeout
-  ght $hold-timeout
-  stt $shift-tap-timeout
-  sht $shift-hold-timeout
-  tdt $tap-dance-timeout
-
-  )
+  tap-ms    120
+  hold-ms   190
+  stap-ms   100   ;; shifts: shorter tap window so Shift+letter never types a paren
+  shold-ms  175
+)
 
 (defalias
-  mod (layer-toggle mod)
-  fun (layer-switch fun)
-  col (layer-switch colemak)
+  nav (layer-while-held nav)
   qwe (layer-switch qwerty)
-  spc (tap-hold-release $ght $ght spc @mod)   ;; Symmetrical timing for spacebar
-  cbs (tap-hold-release $gtt $ght esc lctl)   ;; tap CapsLock == escape | hold Ctrl
-  ret (tap-hold-release $gtt $ght ret rctl)   ;; Use $ett for Enter tap timeout -- longer to prevent sending texts off half-written
+  col (layer-switch colemak)
 
-  ;;  ret (tap-hold-release 90 90 nop0 (multi ret rctl)) ;; Quick tap = nop, hold = multi ret/rctl
+  spc (tap-hold-release $hold-ms $hold-ms spc @nav)
+  cbs (tap-hold-release $tap-ms  $hold-ms esc lctl)
+  ret (tap-hold-release $tap-ms  $hold-ms ret rctl)
+  lpa (tap-hold-press   $stap-ms $shold-ms S-9 lsft)
+  rpa (tap-hold-press   $stap-ms $shold-ms S-0 rsft)
 
-  
-  lpa (tap-hold-press $stt $sht S-9 lsft)     ;; tap LShift == left paren (9)
-  rpa (tap-hold-press $stt $sht S-0 rsft)     ;; tap RShift == right paren (0)
-  ;;  mwu (mwheel-up    50 120)
-  ;;  mwd (mwheel-down  50 120)
-  ;;  mwl (mwheel-left  50 120)
-  ;;  mwr (mwheel-right 50 120)
-  )
+  ;; Hebrew niqqud (nav layer + a/s/d)
+  ha (unicode ֳ)   ;; U+05B3 hataf qamats
+  hs (unicode ֱ)   ;; U+05B1 hataf segol
+  hd (unicode ֲ)   ;; U+05B2 hataf patah
+)
 
+;; First layer defined = starting layer.
+(deflayermap (qwerty)
+  f11  @qwe
+  f12  @col
+  caps @cbs
+  ret  @ret
+  lsft @lpa
+  102d lsft
+  rsft @rpa
+  spc  @spc
+)
+
+;; Only the keys that differ from QWERTY are listed.
+(deflayermap (colemak)
+  f11  @qwe
+  f12  @col
+  caps @cbs
+  ret  @ret
+  lsft @lpa
+  102d lsft
+  rsft @rpa
+  spc  @spc
+  e f   r p   t g   y j   u l   i u   o y   p ;
+  s r   d s   f t   g d   j n   k e   l i   ;  o
+  n k
+)
+
+;; Held-space layer. Unlisted keys fall through to whichever base layer is
+;; active, so it works the same on QWERTY and Colemak.
+(deflayermap (nav)
+  f11 f11
+  f12 f12
+  1 M-1   2 M-2   3 M-3   4 M-4   5 M-5   6 M-6   7 M-7   8 M-8   9 M-9
+  a @ha   s @hs   d @hd
+  h left  j down  k up    l rght
+)

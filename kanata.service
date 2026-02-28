@@ -1,7 +1,11 @@
-# salopst
-# 2026-02-28
+# ---
+# title:    Katata keyboard mapper service
+# author:   salopst
+# date:     2026-02-08
+# lastmod:  2026-02-08
+# file:     $XDG_CONFIG_HOME/systemd/user/kanata.service
+# ---
 
-# ~/.config/systemd/user/kanata.service
 
 [Unit]
 Description=Kanata keyboard remapper
